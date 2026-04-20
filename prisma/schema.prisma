@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  agent
+  user
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  email          String    @unique
+  password       String
+  role           Role      @default(user)
+  department     String?
+  createdAt      DateTime  @default(now())
+  ticketsCreated Ticket[]  @relation("TicketsCreated")
+  ticketsOwned   Ticket[]  @relation("TicketsAssigned")
+  comments       Comment[]
+}
+
+model Ticket {
+  id          String       @id @default(uuid()) @db.Uuid
+  title       String
+  description String
+  category    String
+  priority    Priority
+  status      TicketStatus @default(open)
+  createdById String       @db.Uuid
+  assignedToId String?     @db.Uuid
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  resolvedAt  DateTime?
+  createdBy   User         @relation("TicketsCreated", fields: [createdById], references: [id])
+  assignedTo  User?        @relation("TicketsAssigned", fields: [assignedToId], references: [id])
+  comments    Comment[]
+  attachments Attachment[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([assignedToId])
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+model Comment {
+  id         String   @id @default(uuid()) @db.Uuid
+  ticketId   String   @db.Uuid
+  userId     String   @db.Uuid
+  message    String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
+}
+
+model Attachment {
+  id         String   @id @default(uuid()) @db.Uuid
+  ticketId   String   @db.Uuid
+  fileUrl    String
+  uploadedAt DateTime @default(now())
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}

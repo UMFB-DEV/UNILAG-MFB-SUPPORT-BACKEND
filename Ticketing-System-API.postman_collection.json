@@ -1,0 +1,1042 @@
+{
+	"info": {
+		"_postman_id": "ticketing-system-api",
+		"name": "Ticketing System API",
+		"description": "Complete API collection for Ticketing Management System with all endpoints for testing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:4000",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "adminToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "agentToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data.user.role === 'admin') {",
+									"        pm.collectionVariables.set('adminToken', response.data.token);",
+									"    } else if (response.data.user.role === 'agent') {",
+									"        pm.collectionVariables.set('agentToken', response.data.token);",
+									"    } else {",
+									"        pm.collectionVariables.set('userToken', response.data.token);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"admin\",\n    \"department\": \"IT\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user. Can be admin, agent, or user role"
+					},
+					"response": []
+				},
+				{
+					"name": "Register Agent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('agentToken', response.data.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"agent@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"agent\",\n    \"department\": \"Support\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new support agent"
+					},
+					"response": []
+				},
+				{
+					"name": "Register User (Customer)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('userToken', response.data.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"customer@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"user\",\n    \"department\": \"Sales\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new customer user"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('adminToken', response.data.token);",
+									"    pm.collectionVariables.set('authToken', response.data.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as admin user"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Agent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('agentToken', response.data.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"agent@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as support agent"
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('userToken', response.data.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"customer@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as customer user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Get current authenticated user information"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for registering, logging in, and getting user info"
+		},
+		{
+			"name": "Tickets",
+			"item": [
+				{
+					"name": "Create Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Login Issue\",\n    \"description\": \"I cannot log in to my account. The password reset is not working.\",\n    \"category\": \"IT\",\n    \"priority\": \"high\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets"
+							]
+						},
+						"description": "Create a new ticket"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Low Priority Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Billing Question\",\n    \"description\": \"I have a question about my last invoice.\",\n    \"category\": \"Billing\",\n    \"priority\": \"low\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets"
+							]
+						},
+						"description": "Create a low priority ticket"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Tickets (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List all tickets (Admin access)"
+					},
+					"response": []
+				},
+				{
+					"name": "List Tickets by Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{agentToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets?status=open&priority=high&page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "open"
+								},
+								{
+									"key": "priority",
+									"value": "high"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Filter tickets by status and priority"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Tickets by Keyword",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{agentToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets?keyword=login&category=IT&page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets"
+							],
+							"query": [
+								{
+									"key": "keyword",
+									"value": "login"
+								},
+								{
+									"key": "category",
+									"value": "IT"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Search tickets by keyword and category"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ticket by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}"
+							]
+						},
+						"description": "Get specific ticket details. Replace {{ticketId}} with actual ticket ID from create response"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Ticket",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Login Issue\",\n    \"description\": \"Updated description: I cannot log in to my account. The password reset is not working. Additional details included.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}"
+							]
+						},
+						"description": "Update ticket details. Only ticket creator can update"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Ticket to Agent",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assignedToId\": \"{{agentId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}/assign",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}",
+								"assign"
+							]
+						},
+						"description": "Assign ticket to an agent. Admin only. Replace {{agentId}} with actual agent ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Ticket Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{agentToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"in_progress\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}",
+								"status"
+							]
+						},
+						"description": "Update ticket status. Admin/Agent only. Follows workflow: open->in_progress->resolved->closed"
+					},
+					"response": []
+				},
+				{
+					"name": "Resolve Ticket",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{agentToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"resolved\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}",
+								"status"
+							]
+						},
+						"description": "Mark ticket as resolved. Only assigned agent can resolve"
+					},
+					"response": []
+				},
+				{
+					"name": "Close Ticket",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"closed\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}",
+								"status"
+							]
+						},
+						"description": "Close ticket. Admin/Agent only. Closed tickets cannot be edited"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Ticket",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}"
+							]
+						},
+						"description": "Delete ticket. Admin only or ticket creator"
+					},
+					"response": []
+				}
+			],
+			"description": "Ticket management endpoints"
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "Add Public Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"I tried the suggested solution but it's still not working.\",\n    \"isInternal\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}",
+								"comments"
+							]
+						},
+						"description": "Add a public comment to ticket. Visible to all users."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Internal Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{agentToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Internal note: Customer needs follow-up call. Issue seems related to recent system update.\",\n    \"isInternal\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}",
+								"comments"
+							]
+						},
+						"description": "Add internal comment. Only visible to agents and admins."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ticket Comments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}",
+								"comments"
+							]
+						},
+						"description": "Get all comments for a ticket. Internal comments only visible to agents/admins."
+					},
+					"response": []
+				}
+			],
+			"description": "Comment management for tickets"
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "List All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "List all users. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"newagent@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"agent\",\n    \"department\": \"Technical Support\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Create a new user. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"role\": \"agent\",\n    \"department\": \"Senior Support\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Update user information. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Delete user. Admin only."
+					},
+					"response": []
+				}
+			],
+			"description": "User management endpoints (Admin only)"
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Get Dashboard Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reports",
+								"summary"
+							]
+						},
+						"description": "Get dashboard metrics including total tickets, open/closed counts, average resolution time, and tickets per agent. Admin/Agent only."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Reports CSV",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/export",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reports",
+								"export"
+							]
+						},
+						"description": "Export dashboard summary as CSV file. Admin/Agent only."
+					},
+					"response": []
+				}
+			],
+			"description": "Reporting and analytics endpoints"
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "API Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if API is running"
+					},
+					"response": []
+				}
+			],
+			"description": "System health check"
+		}
+	]
+}
