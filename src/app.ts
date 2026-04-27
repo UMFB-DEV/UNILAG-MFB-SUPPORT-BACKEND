@@ -7,12 +7,13 @@ import ticketRoutes from "./routes/ticketRoutes";
 import userRoutes from "./routes/userRoutes";
 import { authenticate } from "./middleware/authMiddleware";
 import errorHandler from "./middleware/errorHandler";
+import env from "./config/env";
 
 const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: env.frontendUrl,
   credentials: true
 }));
 
