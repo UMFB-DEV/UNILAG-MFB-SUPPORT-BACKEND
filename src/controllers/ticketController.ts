@@ -44,6 +44,16 @@ const updateTicketStatus = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Status updated", data: ticket });
 });
 
+const takeTicket = asyncHandler(async (req, res) => {
+  const ticket = await ticketService.takeTicket(String(req.params.id), req.user!);
+  res.json({ success: true, message: "Ticket taken", data: ticket });
+});
+
+const departmentTickets = asyncHandler(async (req, res) => {
+  const result = await ticketService.departmentTickets(req.query as any, req.user!);
+  res.json({ success: true, ...result });
+});
+
 export {
   createTicket,
   listTickets,
@@ -51,5 +61,7 @@ export {
   updateTicket,
   deleteTicket,
   assignTicket,
+  takeTicket,
+  departmentTickets,
   updateTicketStatus,
 };

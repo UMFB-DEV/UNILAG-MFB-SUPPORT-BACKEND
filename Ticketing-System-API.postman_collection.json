@@ -140,16 +140,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"agent@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"agent\",\n    \"department\": \"Support\"\n}"
+							"raw": "{\n    \"name\": \"Support Agent\",\n    \"email\": \"agent@example.com\",\n    \"password\": \"password123\",\n    \"department\": \"Technical Support\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/auth/register",
+							"raw": "{{baseUrl}}/auth/register-agent",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"auth",
-								"register"
+								"register-agent"
 							]
 						},
 						"description": "Register a new support agent"
@@ -182,7 +182,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"customer@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"user\",\n    \"department\": \"Sales\"\n}"
+							"raw": "{\n    \"name\": \"Precious\",\n    \"email\": \"igwep5537@gmail.com\",\n    \"password\": \"password123\",\n    \"role\": \"user\",\n    \"department\": \"Sales\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/register",
@@ -225,7 +225,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"password123\"\n}"
+							"raw": "{\n    \"email\": \"admin@ticketing.com\",\n    \"password\": \"admin123\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/login",
@@ -267,7 +267,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"agent@example.com\",\n    \"password\": \"password123\"\n}"
+							"raw": "{\n    \"email\": \"agent@ticketing.com\",\n    \"password\": \"agent123\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/login",
@@ -371,7 +371,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"Login Issue\",\n    \"description\": \"I cannot log in to my account. The password reset is not working.\",\n    \"category\": \"IT\",\n    \"priority\": \"high\"\n}"
+							"raw": "{\n    \"title\": \"Login Issue\",\n    \"description\": \"I cannot log in to my account. The password reset is not working.\",\n    \"category\": \"Technical Support\",\n    \"priority\": \"high\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/tickets",
@@ -488,6 +488,44 @@
 							]
 						},
 						"description": "Filter tickets by status and priority"
+					},
+					"response": []
+				},
+				{
+					"name": "Department Tickets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{agentToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets/department?status=open&page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"department"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "open"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get all tickets in agent's department (for self-assignment)"
 					},
 					"response": []
 				},
@@ -618,6 +656,31 @@
 							]
 						},
 						"description": "Assign ticket to an agent. Admin only. Replace {{agentId}} with actual agent ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Take Ticket",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{agentToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets/{{ticketId}}/take",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tickets",
+								"{{ticketId}}",
+								"take"
+							]
+						},
+						"description": "Agent self-assigns ticket to themselves (department validation applies)"
 					},
 					"response": []
 				},
@@ -1032,6 +1095,24 @@
 							]
 						},
 						"description": "Check if API is running"
+					},
+					"response": []
+				},
+				{
+					"name": "Departments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/departments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"departments"
+							]
+						},
+						"description": "Get supported departments for dropdowns"
 					},
 					"response": []
 				}

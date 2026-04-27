@@ -2,7 +2,14 @@ import asyncHandler from "../utils/asyncHandler";
 import { exportSummaryCsv, getSummary } from "../services/reportService";
 
 const summary = asyncHandler(async (req, res) => {
-  const data = await getSummary();
+  const rangeParam = typeof req.query.range === "string" ? req.query.range : undefined;
+  const range = rangeParam === "today" || rangeParam === "week" || rangeParam === "month" ? rangeParam : undefined;
+
+  const data = await getSummary({
+    range,
+    startDate: typeof req.query.startDate === "string" ? req.query.startDate : undefined,
+    endDate: typeof req.query.endDate === "string" ? req.query.endDate : undefined,
+  });
   res.json({ success: true, data });
 });
 

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateTicketStatus = exports.assignTicket = exports.deleteTicket = exports.updateTicket = exports.getTicketById = exports.listTickets = exports.createTicket = void 0;
+exports.updateTicketStatus = exports.takeTicket = exports.assignTicket = exports.deleteTicket = exports.updateTicket = exports.getTicketById = exports.departmentTickets = exports.listTickets = exports.createTicket = void 0;
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../config/prisma"));
 const apiError_1 = __importDefault(require("../utils/apiError"));
@@ -77,6 +77,35 @@ const buildTicketFilter = (query, user) => {
     }
     return where;
 };
+const buildDepartmentTicketFilter = (query, user) => {
+    const where = {};
+    if (query.status)
+        where.status = query.status;
+    if (query.priority)
+        where.priority = query.priority;
+    if (query.assignedTo)
+        where.assignedToId = query.assignedTo;
+    if (query.createdBy)
+        where.createdById = query.createdBy;
+    if (query.startDate || query.endDate) {
+        where.createdAt = {};
+        if (query.startDate)
+            where.createdAt.gte = new Date(query.startDate);
+        if (query.endDate)
+            where.createdAt.lte = new Date(query.endDate);
+    }
+    if (query.keyword) {
+        where.OR = [
+            { title: { contains: query.keyword, mode: client_1.Prisma.QueryMode.insensitive } },
+            { description: { contains: query.keyword, mode: client_1.Prisma.QueryMode.insensitive } },
+        ];
+    }
+    // For department tickets, filter by agent's department
+    if (user.role === "agent" && user.department) {
+        where.category = user.department;
+    }
+    return where;
+};
 const listTickets = async (query, user) => {
     const where = buildTicketFilter(query, user);
     const skip = (query.page - 1) * query.limit;
@@ -101,6 +130,33 @@ const listTickets = async (query, user) => {
     };
 };
 exports.listTickets = listTickets;
+const departmentTickets = async (query, user) => {
+    if (user.role !== "agent" && user.role !== "admin") {
+        throw new apiError_1.default(403, "Only agents and admins can view department tickets");
+    }
+    const where = buildDepartmentTicketFilter(query, user);
+    const skip = (query.page - 1) * query.limit;
+    const [tickets, total] = await Promise.all([
+        prisma_1.default.ticket.findMany({
+            where,
+            include: ticketInclude,
+            orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+            skip,
+            take: query.limit,
+        }),
+        prisma_1.default.ticket.count({ where }),
+    ]);
+    return {
+        data: tickets,
+        meta: {
+            page: query.page,
+            limit: query.limit,
+            total,
+            totalPages: Math.ceil(total / query.limit),
+        },
+    };
+};
+exports.departmentTickets = departmentTickets;
 const getTicketById = async (id, user) => {
     const ticket = await prisma_1.default.ticket.findUnique({ where: { id }, include: ticketInclude });
     if (!ticket)
@@ -137,8 +193,13 @@ const deleteTicket = async (id, user) => {
 };
 exports.deleteTicket = deleteTicket;
 const assignTicket = async (id, assignedToId, user) => {
-    if (user.role !== "admin") {
-        throw new apiError_1.default(403, "Only admin can assign tickets");
+    // Admin can assign to any agent
+    // Agent can only assign to themselves
+    if (user.role !== "admin" && user.role !== "agent") {
+        throw new apiError_1.default(403, "Only admin or agent can assign tickets");
+    }
+    if (user.role === "agent" && assignedToId !== user.id) {
+        throw new apiError_1.default(403, "Agents can only assign tickets to themselves");
     }
     const [ticket, agent] = await Promise.all([
         prisma_1.default.ticket.findUnique({ where: { id } }),
@@ -150,6 +211,10 @@ const assignTicket = async (id, assignedToId, user) => {
         throw new apiError_1.default(400, "Assigned user must be an agent");
     if (ticket.status === "closed")
         throw new apiError_1.default(400, "Closed tickets cannot be reassigned");
+    // Department validation: agents can only take tickets in their department
+    if (user.role === "agent" && agent.department && ticket.category !== agent.department) {
+        throw new apiError_1.default(403, `Agents can only take tickets in their department (${agent.department})`);
+    }
     const updated = await prisma_1.default.ticket.update({
         where: { id },
         data: { assignedToId },
@@ -164,6 +229,40 @@ const assignTicket = async (id, assignedToId, user) => {
     return updated;
 };
 exports.assignTicket = assignTicket;
+const takeTicket = async (id, user) => {
+    if (user.role !== "agent") {
+        throw new apiError_1.default(403, "Only agents can take tickets");
+    }
+    const [ticket, agent] = await Promise.all([
+        prisma_1.default.ticket.findUnique({ where: { id } }),
+        prisma_1.default.user.findUnique({ where: { id: user.id } }),
+    ]);
+    if (!ticket)
+        throw new apiError_1.default(404, "Ticket not found");
+    if (!agent || agent.role !== "agent")
+        throw new apiError_1.default(400, "User must be an agent");
+    if (ticket.status === "closed")
+        throw new apiError_1.default(400, "Closed tickets cannot be taken");
+    if (ticket.assignedToId)
+        throw new apiError_1.default(400, "Ticket is already assigned");
+    // Department validation: agents can only take tickets in their department
+    if (agent.department && ticket.category !== agent.department) {
+        throw new apiError_1.default(403, `You can only take tickets in your department (${agent.department})`);
+    }
+    const updated = await prisma_1.default.ticket.update({
+        where: { id },
+        data: { assignedToId: user.id },
+        include: ticketInclude,
+    });
+    console.log(`[ticket-taken] ticket=${id} takenBy=${user.id}`);
+    await (0, emailService_1.sendEmail)({
+        to: agent.email,
+        subject: `Ticket Taken: ${ticket.title}`,
+        text: `You have taken ticket "${ticket.title}". Current status: "${updated.status}".`,
+    });
+    return updated;
+};
+exports.takeTicket = takeTicket;
 const updateTicketStatus = async (id, status, user) => {
     const ticket = await prisma_1.default.ticket.findUnique({
         where: { id },

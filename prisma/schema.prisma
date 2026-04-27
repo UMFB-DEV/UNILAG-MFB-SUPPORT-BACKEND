@@ -28,6 +28,7 @@ enum TicketStatus {
 
 model User {
   id             String    @id @default(uuid()) @db.Uuid
+  name           String?
   email          String    @unique
   password       String
   role           Role      @default(user)
@@ -36,6 +37,7 @@ model User {
   ticketsCreated Ticket[]  @relation("TicketsCreated")
   ticketsOwned   Ticket[]  @relation("TicketsAssigned")
   comments       Comment[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Ticket {
@@ -84,4 +86,18 @@ model Attachment {
   ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  tokenHash String   @unique
+  userId    String   @db.Uuid
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

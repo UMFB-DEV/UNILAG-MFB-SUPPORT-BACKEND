@@ -21,7 +21,7 @@ const authenticate = async (req, res, next) => {
         }
         const user = await prisma_1.default.user.findUnique({
             where: { id: payload.sub },
-            select: { id: true, email: true, role: true, department: true },
+            select: { id: true, name: true, email: true, role: true, department: true },
         });
         if (!user) {
             throw new apiError_1.default(401, "User no longer exists");

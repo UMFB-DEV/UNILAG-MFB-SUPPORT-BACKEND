@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateTicketStatus = exports.assignTicket = exports.deleteTicket = exports.updateTicket = exports.getTicket = exports.listTickets = exports.createTicket = void 0;
+exports.updateTicketStatus = exports.departmentTickets = exports.takeTicket = exports.assignTicket = exports.deleteTicket = exports.updateTicket = exports.getTicket = exports.listTickets = exports.createTicket = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ticketService = __importStar(require("../services/ticketService"));
 const createTicket = (0, asyncHandler_1.default)(async (req, res) => {
@@ -74,3 +74,13 @@ const updateTicketStatus = (0, asyncHandler_1.default)(async (req, res) => {
     res.json({ success: true, message: "Status updated", data: ticket });
 });
 exports.updateTicketStatus = updateTicketStatus;
+const takeTicket = (0, asyncHandler_1.default)(async (req, res) => {
+    const ticket = await ticketService.takeTicket(String(req.params.id), req.user);
+    res.json({ success: true, message: "Ticket taken", data: ticket });
+});
+exports.takeTicket = takeTicket;
+const departmentTickets = (0, asyncHandler_1.default)(async (req, res) => {
+    const result = await ticketService.departmentTickets(req.query, req.user);
+    res.json({ success: true, ...result });
+});
+exports.departmentTickets = departmentTickets;
