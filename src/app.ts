@@ -11,9 +11,20 @@ import env from "./config/env";
 
 const app = express();
 
+app.disable("etag");
+app.set("etag", false);
+
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+
 // CORS configuration
 app.use(cors({
-  origin: env.frontendUrl,
+  origin: [env.frontendUrl, "http://localhost:3000"],
   credentials: true
 }));
 

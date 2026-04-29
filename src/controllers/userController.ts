@@ -3,6 +3,7 @@ import * as userService from "../services/userService";
 
 const listUsers = asyncHandler(async (req, res) => {
   const users = await userService.listUsers();
+  console.log("[listUsers] firstUserKeys=", Object.keys(users[0] || {}));
   res.json({ success: true, data: users });
 });
 

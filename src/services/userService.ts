@@ -66,7 +66,21 @@ const deleteUser = async (id: string) => {
   if (!existing) {
     throw new ApiError(404, "User not found");
   }
-  await prisma.user.delete({ where: { id } });
+
+  const createdTicketCount = await prisma.ticket.count({ where: { createdById: id } });
+  if (createdTicketCount > 0) {
+    throw new ApiError(
+      409,
+      "Cannot delete user because they have created tickets. Reassign/delete the user's tickets first."
+    );
+  }
+
+  await prisma.$transaction([
+    prisma.comment.deleteMany({ where: { userId: id } }),
+    prisma.passwordResetToken.deleteMany({ where: { userId: id } }),
+    prisma.ticket.updateMany({ where: { assignedToId: id }, data: { assignedToId: null } }),
+    prisma.user.delete({ where: { id } }),
+  ]);
 };
 
 export { listUsers, createUser, updateUser, deleteUser };

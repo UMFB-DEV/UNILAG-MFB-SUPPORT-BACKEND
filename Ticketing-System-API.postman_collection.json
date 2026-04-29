@@ -12,7 +12,17 @@
 			"type": "string"
 		},
 		{
+			"key": "renderBaseUrl",
+			"value": "https://unilag-mfb-support-backend.onrender.com",
+			"type": "string"
+		},
+		{
 			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userToken",
 			"value": "",
 			"type": "string"
 		},
