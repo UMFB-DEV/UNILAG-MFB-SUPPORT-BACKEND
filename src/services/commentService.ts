@@ -55,7 +55,7 @@ const createComment = async (ticketId: string, payload: CommentInput, user: Curr
         sendEmail({
           to: email,
           subject: `New Comment on Ticket: ${ticket.title}`,
-          text: `A new public comment was added: ${comment.message}`,
+          text: `Ticket: ${ticket.title}\n\nA new public comment was added: ${comment.message}`,
         })
       )
     );

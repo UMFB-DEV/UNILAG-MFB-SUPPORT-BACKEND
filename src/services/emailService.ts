@@ -13,12 +13,17 @@ const sendEmail = async ({ to, subject, text }: EmailPayload): Promise<void> => 
     return;
   }
 
-  await transporter.sendMail({
-    from: env.smtp.from,
-    to,
-    subject,
-    text,
-  });
+  try {
+    await transporter.sendMail({
+      from: env.smtp.from,
+      to,
+      subject,
+      text,
+    });
+  } catch (err) {
+    console.log(`[email:error] ${subject} -> ${to}`);
+    console.log(err);
+  }
 };
 
 export { sendEmail };
