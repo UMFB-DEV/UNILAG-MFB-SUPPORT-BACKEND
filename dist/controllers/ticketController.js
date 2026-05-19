@@ -39,8 +39,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateTicketStatus = exports.departmentTickets = exports.takeTicket = exports.assignTicket = exports.deleteTicket = exports.updateTicket = exports.getTicket = exports.listTickets = exports.createTicket = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ticketService = __importStar(require("../services/ticketService"));
+const cloudinary_1 = require("../config/cloudinary");
+const zod_1 = require("zod");
+const createTicketSchema = zod_1.z.object({
+    title: zod_1.z.string().min(3, "Title must be at least 3 characters"),
+    description: zod_1.z.string().min(3, "Description must be at least 3 characters"),
+    category: zod_1.z.string().min(2, "Category must be at least 2 characters"),
+    priority: zod_1.z.enum(["low", "medium", "high"]).default("medium"),
+});
 const createTicket = (0, asyncHandler_1.default)(async (req, res) => {
-    const ticket = await ticketService.createTicket(req.body, req.user);
+    const validatedData = createTicketSchema.parse(req.body);
+    let imageUrl;
+    if (req.file) {
+        imageUrl = await (0, cloudinary_1.uploadImage)(req.file);
+    }
+    const ticket = await ticketService.createTicket({ ...validatedData, imageUrl }, req.user);
     res.status(201).json({ success: true, message: "Ticket created", data: ticket });
 });
 exports.createTicket = createTicket;

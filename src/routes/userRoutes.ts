@@ -1,5 +1,5 @@
 import express from "express";
-import { createUser, deleteUser, listUsers, updateUser } from "../controllers/userController";
+import { createUser, deactivateUser, listUsers, reactivateUser, updateUser } from "../controllers/userController";
 import { authorize } from "../middleware/authMiddleware";
 import validate from "../middleware/validate";
 import { createUserSchema, updateUserSchema } from "../validations/userValidation";
@@ -10,6 +10,7 @@ router.use(authorize("admin"));
 router.get("/", listUsers);
 router.post("/", validate(createUserSchema), createUser);
 router.patch("/:id", validate(updateUserSchema), updateUser);
-router.delete("/:id", deleteUser);
+router.patch("/:id/deactivate", deactivateUser);
+router.patch("/:id/reactivate", reactivateUser);
 
 export default router;

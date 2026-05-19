@@ -17,9 +17,14 @@ const updateUser = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "User updated", data: user });
 });
 
-const deleteUser = asyncHandler(async (req, res) => {
-  await userService.deleteUser(String(req.params.id));
-  res.status(204).send();
+const deactivateUser = asyncHandler(async (req, res) => {
+  const user = await userService.deactivateUser(String(req.params.id));
+  res.json({ success: true, message: "User deactivated", data: user });
 });
 
-export { listUsers, createUser, updateUser, deleteUser };
+const reactivateUser = asyncHandler(async (req, res) => {
+  const user = await userService.reactivateUser(String(req.params.id));
+  res.json({ success: true, message: "User reactivated", data: user });
+});
+
+export { listUsers, createUser, updateUser, deactivateUser, reactivateUser };

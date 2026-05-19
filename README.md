@@ -8,79 +8,133 @@ RESTful backend API for a Ticketing Management System using Node.js, Express, Po
 - Role-based access control (`admin`, `agent`, `user`)
 - Ticket lifecycle with status transition rules
 - Public/internal comments
-- Email notification hooks
+- Email notifications (Gmail service)
 - Reports summary + CSV export
 - Filtering and pagination on tickets
+- User and ticket deletion with safety checks
 
-## Setup
+## Quick Start
 
-1. Copy environment file:
-   - `cp .env.example .env` (or create manually on Windows)
-2. Configure:
-   - `DATABASE_URL`
-   - `JWT_SECRET`
-   - SMTP credentials
-3. Install dependencies:
-   - `npm install`
-4. Generate Prisma client:
-   - `npm run prisma:generate`
-5. Run migrations:
-   - `npm run prisma:migrate -- --name init`
-6. Start API:
-   - `npm run dev`
+1. **Clone and install**
+   ```bash
+   git clone <repo>
+   cd Ticketing-System-backend
+   npm install
+   ```
+
+2. **Environment**
+   - Copy `.env.example` to `.env` (or create manually)
+   - Required vars:
+     ```env
+     DATABASE_URL=postgresql://...
+     JWT_SECRET=your-secret
+     SMTP_USER=your-email@gmail.com
+     SMTP_PASS=your-gmail-app-password
+     SMTP_FROM="Ticketing System <your-email@gmail.com>"
+     ```
+   - Optional:
+     ```env
+     PORT=4000
+     FRONTEND_URL=http://localhost:3000
+     ```
+
+3. **Database**
+   ```bash
+   npx prisma generate
+   npx prisma migrate dev --name init
+   ```
+
+4. **Run**
+   ```bash
+   npm run dev
+   ```
 
 ## Core Endpoints
 
 ### Auth
-
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /auth/me`
+- `POST /auth/register` – Register end users
+- `POST /auth/login` – Login and receive JWT
+- `GET /auth/me` – Get current user profile
+- `POST /auth/register-agent` – Register agents (admin only)
 
 ### Users (Admin only)
-
-- `GET /users`
-- `POST /users`
-- `PATCH /users/:id`
-- `DELETE /users/:id`
+- `GET /users` – List all users
+- `POST /users` – Create a user
+- `PATCH /users/:id` – Update user
+- `DELETE /users/:id` – Delete user (blocks if user created tickets)
 
 ### Tickets
-
-- `POST /tickets`
-- `GET /tickets`
-- `GET /tickets/:id`
-- `PATCH /tickets/:id`
-- `DELETE /tickets/:id`
-- `PATCH /tickets/:id/assign`
-- `PATCH /tickets/:id/status`
-- `POST /tickets/:id/comments`
-- `GET /tickets/:id/comments`
+- `POST /tickets` – Create ticket (any role)
+- `GET /tickets` – List tickets with filtering/pagination
+- `GET /tickets/:id` – Get single ticket
+- `PATCH /tickets/:id` – Update ticket
+- `DELETE /tickets/:id` – Delete ticket
+- `PATCH /tickets/:id/assign` – Assign ticket to agent
+- `PATCH /tickets/:id/status` – Change ticket status
+- `POST /tickets/:id/comments` – Add comment (public/internal)
+- `GET /tickets/:id/comments` – List comments (users see public only)
 
 ### Reports
-
-- `GET /reports/summary`
-- `GET /reports/export`
+- `GET /reports/summary` – Summary stats
+- `GET /reports/export` – CSV export
 
 ## Ticket Workflow Rules
 
-- `open -> in_progress`
-- `in_progress -> resolved`
-- `resolved -> closed`
-- Only `admin`/`agent` can change status
-- Only assigned agent can resolve
-- Closed tickets cannot be edited
+- **Status transitions:**
+  - `open → in_progress → resolved → closed`
+- **Who can change status:** `admin`/`agent`
+- **Who can resolve:** Only assigned agent
+- **Closed tickets:** Cannot be edited or commented
 
 ## Filtering (`GET /tickets`)
 
-Supports:
+Query params:
+- `status` (`open`|`in_progress`|`resolved`|`closed`)
+- `priority` (`low`|`medium`|`high`)
+- `category` (string)
+- `assignedTo` (UUID)
+- `createdBy` (UUID)
+- `startDate`/`endDate` (ISO datetime)
+- `keyword` (searches title/description)
+- `page` (number, default 1)
+- `limit` (number, max 100, default 20)
 
-- `status`
-- `priority`
-- `category`
-- `assignedTo`
-- `createdBy`
-- `startDate`
-- `endDate`
-- `keyword`
-- `page`
-- `limit`
+## Comments
+
+- **Public comments:** Emailed to ticket creator and assigned agent
+- **Internal comments:** Visible to agents/admins only
+- **Permissions:**
+  - Users: only on their own tickets, public only
+  - Agents: only on assigned tickets
+  - Admins: all tickets, all comments
+
+## Deletion Safety
+
+- **Users:** Blocked if they created any tickets (409). Otherwise, deletes dependent comments/password reset tokens and unassigns tickets.
+- **Tickets:** Direct deletion allowed; consider adding soft deletes if needed.
+
+## Email Configuration
+
+- Uses **Gmail service** (`SMTP_USER` + `SMTP_PASS` + `SMTP_FROM`)
+- No `SMTP_HOST`/`SMTP_PORT` required.
+- Failures are logged and won’t crash endpoints.
+
+## Deployment (Render)
+
+- Build command: `npm run build`
+- Start command: `npm start`
+- Ensure all env vars are set in Render dashboard.
+- Port is injected by Render (`process.env.PORT`).
+
+## Scripts
+
+- `npm run dev` – Start with nodemon
+- `npm run build` – Build for production
+- `npm start` – Start production server
+- `npm run prisma:generate` – Regenerate Prisma client
+- `npm run prisma:migrate` – Run migrations
+- `npm run prisma:studio` – Open Prisma Studio
+
+## License
+
+MIT

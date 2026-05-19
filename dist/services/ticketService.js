@@ -10,8 +10,8 @@ const apiError_1 = __importDefault(require("../utils/apiError"));
 const ticketRules_1 = require("../utils/ticketRules");
 const emailService_1 = require("./emailService");
 const ticketInclude = {
-    createdBy: { select: { id: true, email: true, role: true } },
-    assignedTo: { select: { id: true, email: true, role: true } },
+    createdBy: { select: { id: true, name: true, email: true, role: true } },
+    assignedTo: { select: { id: true, name: true, email: true, role: true } },
 };
 const ensureTicketAccess = (ticket, user) => {
     if (user.role === "admin") {
@@ -102,30 +102,35 @@ const buildDepartmentTicketFilter = (query, user) => {
     }
     // For department tickets, filter by agent's department
     if (user.role === "agent" && user.department) {
-        where.category = user.department;
+        where.category = {
+            equals: user.department,
+            mode: client_1.Prisma.QueryMode.insensitive,
+        };
     }
     return where;
 };
 const listTickets = async (query, user) => {
     const where = buildTicketFilter(query, user);
-    const skip = (query.page - 1) * query.limit;
+    const page = Number.isFinite(query.page) && query.page > 0 ? query.page : 1;
+    const limit = Number.isFinite(query.limit) && query.limit > 0 ? query.limit : 20;
+    const skip = (page - 1) * limit;
     const [tickets, total] = await Promise.all([
         prisma_1.default.ticket.findMany({
             where,
             include: ticketInclude,
             orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
             skip,
-            take: query.limit,
+            take: limit,
         }),
         prisma_1.default.ticket.count({ where }),
     ]);
     return {
         data: tickets,
         meta: {
-            page: query.page,
-            limit: query.limit,
+            page,
+            limit,
             total,
-            totalPages: Math.ceil(total / query.limit),
+            totalPages: Math.ceil(total / limit),
         },
     };
 };
@@ -135,24 +140,26 @@ const departmentTickets = async (query, user) => {
         throw new apiError_1.default(403, "Only agents and admins can view department tickets");
     }
     const where = buildDepartmentTicketFilter(query, user);
-    const skip = (query.page - 1) * query.limit;
+    const page = Number.isFinite(query.page) && query.page > 0 ? query.page : 1;
+    const limit = Number.isFinite(query.limit) && query.limit > 0 ? query.limit : 20;
+    const skip = (page - 1) * limit;
     const [tickets, total] = await Promise.all([
         prisma_1.default.ticket.findMany({
             where,
             include: ticketInclude,
             orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
             skip,
-            take: query.limit,
+            take: limit,
         }),
         prisma_1.default.ticket.count({ where }),
     ]);
     return {
         data: tickets,
         meta: {
-            page: query.page,
-            limit: query.limit,
+            page,
+            limit,
             total,
-            totalPages: Math.ceil(total / query.limit),
+            totalPages: Math.ceil(total / limit),
         },
     };
 };
@@ -215,17 +222,38 @@ const assignTicket = async (id, assignedToId, user) => {
     if (user.role === "agent" && agent.department && ticket.category !== agent.department) {
         throw new apiError_1.default(403, `Agents can only take tickets in their department (${agent.department})`);
     }
+    const shouldSetReassignedAt = user.role === "admin" && Boolean(ticket.assignedToId) && ticket.assignedToId !== assignedToId;
+    const previousAssignedToId = ticket.assignedToId;
+    const shouldSetAssignedAt = !ticket.assignedToId;
     const updated = await prisma_1.default.ticket.update({
         where: { id },
-        data: { assignedToId },
+        data: {
+            assignedToId,
+            ...(shouldSetAssignedAt ? { assignedAt: new Date() } : {}),
+            ...(shouldSetReassignedAt ? { reassignedAt: new Date() } : {}),
+        },
         include: ticketInclude,
     });
     console.log(`[ticket-assigned] ticket=${id} assignedTo=${assignedToId} by=${user.id}`);
-    await (0, emailService_1.sendEmail)({
+    const notifyNewAssignee = (0, emailService_1.sendEmail)({
         to: agent.email,
         subject: `Ticket Assigned: ${updated.title}`,
-        text: `You have been assigned ticket ${updated.id}.`,
+        text: `Ticket: ${updated.title}\nTicket ID: ${updated.id}`,
     });
+    const notifyPreviousAssignee = shouldSetReassignedAt && previousAssignedToId
+        ? prisma_1.default.user
+            .findUnique({ where: { id: previousAssignedToId }, select: { email: true } })
+            .then((prev) => {
+            if (!prev?.email)
+                return;
+            return (0, emailService_1.sendEmail)({
+                to: prev.email,
+                subject: `Ticket Reassigned: ${updated.title}`,
+                text: `You are no longer assigned to this ticket.\n\nTicket: ${updated.title}\nTicket ID: ${updated.id}`,
+            });
+        })
+        : Promise.resolve();
+    await Promise.all([notifyNewAssignee, notifyPreviousAssignee]);
     return updated;
 };
 exports.assignTicket = assignTicket;
@@ -251,7 +279,7 @@ const takeTicket = async (id, user) => {
     }
     const updated = await prisma_1.default.ticket.update({
         where: { id },
-        data: { assignedToId: user.id },
+        data: { assignedToId: user.id, assignedAt: new Date() },
         include: ticketInclude,
     });
     console.log(`[ticket-taken] ticket=${id} takenBy=${user.id}`);
@@ -280,7 +308,7 @@ const updateTicketStatus = async (id, status, user) => {
     if (status === "resolved" && user.role === "agent" && ticket.assignedToId !== user.id) {
         throw new apiError_1.default(403, "Only assigned agent can resolve this ticket");
     }
-    (0, ticketRules_1.assertTransitionAllowed)(ticket.status, status);
+    (0, ticketRules_1.assertTransitionAllowed)(ticket.status, status, user.role);
     const updated = await prisma_1.default.ticket.update({
         where: { id },
         data: {

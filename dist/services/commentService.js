@@ -49,7 +49,7 @@ const createComment = async (ticketId, payload, user) => {
         await Promise.all(Array.from(targets).map((email) => (0, emailService_1.sendEmail)({
             to: email,
             subject: `New Comment on Ticket: ${ticket.title}`,
-            text: `A new public comment was added: ${comment.message}`,
+            text: `Ticket: ${ticket.title}\n\nA new public comment was added: ${comment.message}`,
         })));
     }
     return comment;

@@ -21,10 +21,13 @@ const authenticate = async (req, res, next) => {
         }
         const user = await prisma_1.default.user.findUnique({
             where: { id: payload.sub },
-            select: { id: true, name: true, email: true, role: true, department: true },
+            select: { id: true, name: true, email: true, role: true, department: true, isActive: true },
         });
         if (!user) {
             throw new apiError_1.default(401, "User no longer exists");
+        }
+        if (user.isActive === false) {
+            throw new apiError_1.default(403, "Account deactivated");
         }
         req.user = user;
         next();

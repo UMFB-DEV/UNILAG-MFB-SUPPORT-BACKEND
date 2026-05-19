@@ -13,5 +13,6 @@ router.use((0, authMiddleware_1.authorize)("admin"));
 router.get("/", userController_1.listUsers);
 router.post("/", (0, validate_1.default)(userValidation_1.createUserSchema), userController_1.createUser);
 router.patch("/:id", (0, validate_1.default)(userValidation_1.updateUserSchema), userController_1.updateUser);
-router.delete("/:id", userController_1.deleteUser);
+router.patch("/:id/deactivate", userController_1.deactivateUser);
+router.patch("/:id/reactivate", userController_1.reactivateUser);
 exports.default = router;

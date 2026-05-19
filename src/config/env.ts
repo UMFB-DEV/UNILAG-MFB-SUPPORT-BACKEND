@@ -14,6 +14,11 @@ const env = {
     pass: process.env.SMTP_PASS,
     from: process.env.SMTP_FROM || "Ticketing System <no-reply@example.com>",
   },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+  },
 };
 
 export default env;

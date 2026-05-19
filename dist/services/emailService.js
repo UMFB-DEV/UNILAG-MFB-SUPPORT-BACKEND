@@ -11,11 +11,17 @@ const sendEmail = async ({ to, subject, text }) => {
         console.log(`[email:skipped] ${subject} -> ${to}`);
         return;
     }
-    await mailer_1.transporter.sendMail({
-        from: env_1.default.smtp.from,
-        to,
-        subject,
-        text,
-    });
+    try {
+        await mailer_1.transporter.sendMail({
+            from: env_1.default.smtp.from,
+            to,
+            subject,
+            text,
+        });
+    }
+    catch (err) {
+        console.log(`[email:error] ${subject} -> ${to}`);
+        console.log(err);
+    }
 };
 exports.sendEmail = sendEmail;

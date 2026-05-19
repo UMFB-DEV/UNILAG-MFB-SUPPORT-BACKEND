@@ -25,6 +25,7 @@ type TicketInput = {
   description: string;
   category: string;
   priority: TicketPriority;
+  imageUrl?: string;
 };
 
 type TicketUpdateInput = Partial<TicketInput>;
@@ -264,19 +265,46 @@ const assignTicket = async (id: string, assignedToId: string, user: CurrentUser)
     throw new ApiError(403, `Agents can only take tickets in their department (${agent.department})`);
   }
 
+  const shouldSetReassignedAt =
+    user.role === "admin" && Boolean(ticket.assignedToId) && ticket.assignedToId !== assignedToId;
+
+  const previousAssignedToId = ticket.assignedToId;
+
+  const shouldSetAssignedAt = !ticket.assignedToId;
+
   const updated = await prisma.ticket.update({
     where: { id },
-    data: { assignedToId },
+    data: ({
+      assignedToId,
+      ...(shouldSetAssignedAt ? { assignedAt: new Date() } : {}),
+      ...(shouldSetReassignedAt ? { reassignedAt: new Date() } : {}),
+    } as any),
     include: ticketInclude,
   });
 
   console.log(`[ticket-assigned] ticket=${id} assignedTo=${assignedToId} by=${user.id}`);
 
-  await sendEmail({
+  const notifyNewAssignee = sendEmail({
     to: agent.email,
     subject: `Ticket Assigned: ${updated.title}`,
-    text: `You have been assigned ticket ${updated.id}.`,
+    text: `Ticket: ${updated.title}\nTicket ID: ${updated.id}`,
   });
+
+  const notifyPreviousAssignee =
+    shouldSetReassignedAt && previousAssignedToId
+      ? prisma.user
+          .findUnique({ where: { id: previousAssignedToId }, select: { email: true } })
+          .then((prev) => {
+            if (!prev?.email) return;
+            return sendEmail({
+              to: prev.email,
+              subject: `Ticket Reassigned: ${updated.title}`,
+              text: `You are no longer assigned to this ticket.\n\nTicket: ${updated.title}\nTicket ID: ${updated.id}`,
+            });
+          })
+      : Promise.resolve();
+
+  await Promise.all([notifyNewAssignee, notifyPreviousAssignee]);
 
   return updated;
 };
@@ -303,7 +331,7 @@ const takeTicket = async (id: string, user: CurrentUser) => {
 
   const updated = await prisma.ticket.update({
     where: { id },
-    data: { assignedToId: user.id },
+    data: ({ assignedToId: user.id, assignedAt: new Date() } as any),
     include: ticketInclude,
   });
 

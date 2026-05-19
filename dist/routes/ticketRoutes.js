@@ -42,8 +42,9 @@ const ticketController = __importStar(require("../controllers/ticketController")
 const validate_1 = __importDefault(require("../middleware/validate"));
 const ticketValidation_1 = require("../validations/ticketValidation");
 const commentValidation_1 = require("../validations/commentValidation");
+const multer_1 = require("../config/multer");
 const router = express_1.default.Router();
-router.post("/", (0, validate_1.default)(ticketValidation_1.createTicketSchema), ticketController.createTicket);
+router.post("/", multer_1.upload.single("image"), ticketController.createTicket);
 router.get("/", (0, validate_1.default)(ticketValidation_1.ticketQuerySchema, "query"), ticketController.listTickets);
 router.get("/department", (0, validate_1.default)(ticketValidation_1.ticketQuerySchema, "query"), ticketController.departmentTickets);
 router.get("/:id", ticketController.getTicket);

@@ -10,10 +10,11 @@ import {
   ticketQuerySchema,
 } from "../validations/ticketValidation";
 import { createCommentSchema } from "../validations/commentValidation";
+import { upload } from "../config/multer";
 
 const router = express.Router();
 
-router.post("/", validate(createTicketSchema), ticketController.createTicket);
+router.post("/", upload.single("image"), ticketController.createTicket);
 router.get("/", validate(ticketQuerySchema, "query"), ticketController.listTickets);
 router.get("/department", validate(ticketQuerySchema, "query"), ticketController.departmentTickets);
 router.get("/:id", ticketController.getTicket);

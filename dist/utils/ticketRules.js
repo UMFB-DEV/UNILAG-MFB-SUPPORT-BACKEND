@@ -12,8 +12,12 @@ const allowedTransitions = {
     closed: [],
 };
 exports.allowedTransitions = allowedTransitions;
-const assertTransitionAllowed = (currentStatus, nextStatus) => {
+const assertTransitionAllowed = (currentStatus, nextStatus, userRole) => {
     const allowed = allowedTransitions[currentStatus] || [];
+    // Allow admins to revert in_progress -> open
+    if (currentStatus === "in_progress" && nextStatus === "open" && userRole === "admin") {
+        return;
+    }
     if (!allowed.includes(nextStatus)) {
         throw new apiError_1.default(400, `Invalid status transition from ${currentStatus} to ${nextStatus}`);
     }

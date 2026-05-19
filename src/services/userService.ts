@@ -17,16 +17,64 @@ type UpdateUserInput = {
 };
 
 const listUsers = async () => {
-  return prisma.user.findMany({
+  const users = await prisma.user.findMany({
     select: {
       id: true,
       name: true,
       email: true,
       role: true,
+      isActive: true,
       department: true,
       createdAt: true,
     },
     orderBy: { createdAt: "desc" },
+  });
+
+  const agentIds = users.filter((u) => u.role === "agent").map((u) => u.id);
+  if (agentIds.length === 0) {
+    return users;
+  }
+
+  const resolvedTickets = await prisma.ticket.findMany({
+    where: {
+      status: { in: ["resolved", "closed"] },
+      resolvedAt: { not: null },
+      assignedToId: { in: agentIds },
+    },
+    select: {
+      assignedToId: true,
+      assignedAt: true,
+      reassignedAt: true,
+      resolvedAt: true,
+    },
+  });
+
+  const agentBuckets = resolvedTickets.reduce(
+    (acc, t) => {
+      const agentId = t.assignedToId as string;
+      const startAt = t.reassignedAt || t.assignedAt;
+      if (!startAt || !t.resolvedAt) return acc;
+
+      const durationMs = (t.resolvedAt as Date).getTime() - (startAt as Date).getTime();
+      if (!Number.isFinite(durationMs) || durationMs < 0) return acc;
+
+      const bucket = acc[agentId] || { sumMs: 0, count: 0 };
+      bucket.sumMs += durationMs;
+      bucket.count += 1;
+      acc[agentId] = bucket;
+      return acc;
+    },
+    {} as Record<string, { sumMs: number; count: number }>
+  );
+
+  return users.map((u) => {
+    if (u.role !== "agent") return u;
+    const bucket = agentBuckets[u.id];
+    const avgMinutes =
+      bucket && bucket.count > 0
+        ? Number(((bucket.sumMs / bucket.count) / (1000 * 60)).toFixed(2))
+        : 0;
+    return { ...u, averageAssignedToResolvedMinutes: avgMinutes };
   });
 };
 
@@ -39,7 +87,7 @@ const createUser = async ({ email, password, role, department }: CreateUserInput
 
   return prisma.user.create({
     data: { email, password: hashed, role, department },
-    select: { id: true, email: true, role: true, department: true, createdAt: true },
+    select: { id: true, email: true, role: true, isActive: true, department: true, createdAt: true },
   });
 };
 
@@ -57,7 +105,33 @@ const updateUser = async (id: string, payload: UpdateUserInput) => {
   return prisma.user.update({
     where: { id },
     data,
-    select: { id: true, email: true, role: true, department: true, createdAt: true },
+    select: { id: true, email: true, role: true, isActive: true, department: true, createdAt: true },
+  });
+};
+
+const deactivateUser = async (id: string) => {
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return prisma.user.update({
+    where: { id },
+    data: { isActive: false },
+    select: { id: true, name: true, email: true, role: true, isActive: true, department: true, createdAt: true },
+  });
+};
+
+const reactivateUser = async (id: string) => {
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return prisma.user.update({
+    where: { id },
+    data: { isActive: true },
+    select: { id: true, name: true, email: true, role: true, isActive: true, department: true, createdAt: true },
   });
 };
 
@@ -83,4 +157,4 @@ const deleteUser = async (id: string) => {
   ]);
 };
 
-export { listUsers, createUser, updateUser, deleteUser };
+export { listUsers, createUser, updateUser, deactivateUser, reactivateUser, deleteUser };

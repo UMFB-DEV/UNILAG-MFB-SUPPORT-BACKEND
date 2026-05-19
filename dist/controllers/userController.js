@@ -36,11 +36,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.updateUser = exports.createUser = exports.listUsers = void 0;
+exports.reactivateUser = exports.deactivateUser = exports.updateUser = exports.createUser = exports.listUsers = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const userService = __importStar(require("../services/userService"));
 const listUsers = (0, asyncHandler_1.default)(async (req, res) => {
     const users = await userService.listUsers();
+    console.log("[listUsers] firstUserKeys=", Object.keys(users[0] || {}));
     res.json({ success: true, data: users });
 });
 exports.listUsers = listUsers;
@@ -54,8 +55,13 @@ const updateUser = (0, asyncHandler_1.default)(async (req, res) => {
     res.json({ success: true, message: "User updated", data: user });
 });
 exports.updateUser = updateUser;
-const deleteUser = (0, asyncHandler_1.default)(async (req, res) => {
-    await userService.deleteUser(String(req.params.id));
-    res.status(204).send();
+const deactivateUser = (0, asyncHandler_1.default)(async (req, res) => {
+    const user = await userService.deactivateUser(String(req.params.id));
+    res.json({ success: true, message: "User deactivated", data: user });
 });
-exports.deleteUser = deleteUser;
+exports.deactivateUser = deactivateUser;
+const reactivateUser = (0, asyncHandler_1.default)(async (req, res) => {
+    const user = await userService.reactivateUser(String(req.params.id));
+    res.json({ success: true, message: "User reactivated", data: user });
+});
+exports.reactivateUser = reactivateUser;

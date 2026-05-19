@@ -38,7 +38,7 @@ const register = async ({ name, email, password, department }: RegisterInput) =>
       role: "user",
       department,
     },
-    select: { id: true, name: true, email: true, role: true, department: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, isActive: true, department: true, createdAt: true },
   });
 
   // Send welcome email
@@ -66,7 +66,7 @@ const registerAgent = async ({ name, email, password, department }: RegisterAgen
       role: "agent",
       department,
     },
-    select: { id: true, name: true, email: true, role: true, department: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, isActive: true, department: true, createdAt: true },
   });
 
   await sendEmail({
@@ -84,6 +84,10 @@ const login = async ({ email, password }: LoginInput) => {
     throw new ApiError(401, "Invalid credentials");
   }
 
+  if (user.isActive === false) {
+    throw new ApiError(403, "Account deactivated");
+  }
+
   const match = await bcrypt.compare(password, user.password);
   if (!match) {
     throw new ApiError(401, "Invalid credentials");
@@ -94,6 +98,7 @@ const login = async ({ email, password }: LoginInput) => {
     name: user.name,
     email: user.email,
     role: user.role,
+    isActive: user.isActive,
     department: user.department,
     createdAt: user.createdAt,
   };
@@ -184,7 +189,7 @@ const updateProfile = async (payload: UpdateProfileInput, user: { id: string; em
   const updated = await prisma.user.update({
     where: { id: user.id },
     data,
-    select: { id: true, email: true, name: true, role: true, department: true, createdAt: true },
+    select: { id: true, email: true, name: true, role: true, isActive: true, department: true, createdAt: true },
   });
 
   return { user: updated };

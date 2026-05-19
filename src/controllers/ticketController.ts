@@ -1,8 +1,28 @@
 import asyncHandler from "../utils/asyncHandler";
 import * as ticketService from "../services/ticketService";
+import { uploadImage } from "../config/cloudinary";
+import { z } from "zod";
+
+const createTicketSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  description: z.string().min(3, "Description must be at least 3 characters"),
+  category: z.string().min(2, "Category must be at least 2 characters"),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+});
 
 const createTicket = asyncHandler(async (req, res) => {
-  const ticket = await ticketService.createTicket(req.body, req.user!);
+  const validatedData = createTicketSchema.parse(req.body);
+
+  let imageUrl: string | undefined;
+  
+  if (req.file) {
+    imageUrl = await uploadImage(req.file);
+  }
+
+  const ticket = await ticketService.createTicket(
+    { ...validatedData, imageUrl },
+    req.user!
+  );
   res.status(201).json({ success: true, message: "Ticket created", data: ticket });
 });
 

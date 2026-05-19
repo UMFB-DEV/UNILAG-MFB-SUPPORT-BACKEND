@@ -12,16 +12,40 @@ const ticketRoutes_1 = __importDefault(require("./routes/ticketRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const authMiddleware_1 = require("./middleware/authMiddleware");
 const errorHandler_1 = __importDefault(require("./middleware/errorHandler"));
+const env_1 = __importDefault(require("./config/env"));
 const app = (0, express_1.default)();
+app.disable("etag");
+app.set("etag", false);
+app.use((req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+    next();
+});
 // CORS configuration
 app.use((0, cors_1.default)({
-    origin: 'http://localhost:3000',
+    origin: [env_1.default.frontendUrl, "http://localhost:3000"],
     credentials: true
 }));
 app.use(express_1.default.json());
 app.use((0, morgan_1.default)("dev"));
 app.get("/health", (req, res) => {
     res.json({ success: true, message: "Ticketing API is running" });
+});
+app.get("/departments", (req, res) => {
+    res.json({
+        success: true,
+        data: [
+            "Internal control and risk department",
+            "Credit department",
+            "Compliance",
+            "Human resources department",
+            "It department",
+            "Marketing",
+            "Operations",
+        ],
+    });
 });
 app.use("/auth", authRoutes_1.default);
 app.use("/users", authMiddleware_1.authenticate, userRoutes_1.default);
